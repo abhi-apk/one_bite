@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final PageController _pageController;
-  static const int _initialPage = 10000;
+  static const int _initialPage = 5000;
 
   @override
   void initState() {
@@ -48,10 +48,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final platformBrightness = MediaQuery.of(context).platformBrightness;
     final isDark =
         mode == ThemeMode.dark ||
-            (mode == ThemeMode.system && platformBrightness == Brightness.dark);
+        (mode == ThemeMode.system && platformBrightness == Brightness.dark);
 
-    void toggleTheme() => ref.read(themeModeProvider.notifier).state =
-    isDark ? ThemeMode.light : ThemeMode.dark;
+    void toggleTheme() => ref.read(themeModeProvider.notifier).state = isDark
+        ? ThemeMode.light
+        : ThemeMode.dark;
     void toggleLanguage() {
       final newLang = locale.languageCode == 'en' ? 'hi' : 'en';
       ref.read(languageProvider.notifier).state = Locale(newLang);
@@ -60,9 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        iconTheme: IconThemeData(
-          color: isDark ? Colors.white : Colors.black,
-        ),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
         title: Text(
           locale.languageCode == 'en' ? 'OneBite' : 'वन बाइट',
           style: TextStyle(
@@ -85,11 +84,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: cuisinesAsync.when(
         data: (cuisines) {
+          // ─── GUARD: If cuisines is empty, show a placeholder and skip modulo operation ───
+          if (cuisines.isEmpty) {
+            return Center(
+              child: Text(
+                locale.languageCode == 'en'
+                    ? 'No cuisines available'
+                    : 'कोई व्यंजन उपलब्ध नहीं हैं',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                ),
+              ),
+            );
+          }
+
+          // At this point, cuisines.length >= 1, so index % cuisines.length is safe.
           final allDishes = cuisines.expand((c) => c.items).toList();
           final topDishes = [...allDishes]
             ..sort((a, b) => b.rating.compareTo(a.rating));
-          final favDishes =
-          allDishes.where((d) => favIds.contains(d.id)).toList();
+          final favDishes = allDishes
+              .where((d) => favIds.contains(d.id))
+              .toList();
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -103,24 +119,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   const SizedBox(height: 16),
 
-
-                  // Cuisine carousel
+                  // ─── Cuisine carousel (infinite scroll) ───
                   SizedBox(
                     height: 250,
                     child: PageView.builder(
                       controller: _pageController,
-                      itemCount: cuisines.length * 1000,
+                      itemCount: 10000,
                       itemBuilder: (context, index) {
-                        final cuisine =
-                        cuisines[index % cuisines.length];
+                        // Now safe because cuisines.isNotEmpty
+                        final cuisine = cuisines[index % cuisines.length];
                         return CuisineCard(
                           cuisine: cuisine,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    CuisineScreen(cuisine: cuisine),
+                                builder: (_) => CuisineScreen(cuisine: cuisine),
                               ),
                             );
                           },
@@ -129,30 +143,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
 
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      'Top Dishes',
-                      style: TextStyle(
+                      locale.languageCode == 'en'
+                          ? 'Top Dishes'
+                          : 'शीर्ष व्यंजन',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
 
-                  // Top 3 dishes
+                  // ─── Top 3 dishes ───
                   ...topDishes.take(3).map((dish) => DishTile(dish: dish)),
 
-
-                  // Favorites strip
+                  // ─── Favorites strip ───
                   if (favDishes.isNotEmpty) ...[
-                    const Padding(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Text(
-                        'Favorites',
+                        locale.languageCode == 'en' ? 'Favorites' : 'पसंदीदा',
                         style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     SizedBox(
@@ -163,18 +182,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         itemBuilder: (ctx, i) {
                           final d = favDishes[i];
                           return Padding(
-                            padding:
-                            const EdgeInsets.symmetric(horizontal: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Column(
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    // navigate to cuisine screen if desired
+                                    // Optionally navigate to cuisine/dish detail
                                   },
                                   child: CircleAvatar(
                                     radius: 40,
-                                    backgroundImage:
-                                    NetworkImage(d.imageUrl),
+                                    backgroundImage: NetworkImage(d.imageUrl),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -211,8 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.wifi_off,
-                      size: 64, color: Colors.grey),
+                  const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
                   const Text(
                     'Please connect to the internet',
@@ -228,13 +244,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      ref
-                          .read(isRetryingProvider.notifier)
-                          .state = true;
+                      ref.read(isRetryingProvider.notifier).state = true;
                       await Future.delayed(const Duration(seconds: 10));
                       ref.invalidate(cuisineProvider);
-                      ref.read(isRetryingProvider.notifier).state =
-                      false;
+                      ref.read(isRetryingProvider.notifier).state = false;
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -255,8 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const SearchScreen()),
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
                 );
               },
               backgroundColor: Colors.orange,
@@ -271,8 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const CartScreen()),
+                  MaterialPageRoute(builder: (_) => const CartScreen()),
                 );
               },
               child: const Icon(Icons.shopping_cart),
@@ -280,8 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButtonLocation:
-      FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -110,8 +110,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     children: [
                       TextField(
                         controller: searchController,
-                        decoration: const InputDecoration(
-                          labelText: 'Search by name',
+                        decoration: InputDecoration(
+                          labelText: locale.languageCode == 'en'
+                              ? 'Search by name'
+                              : 'नाम से खोजें',
                           prefixIcon: Icon(Icons.search),
                           border: OutlineInputBorder(),
                         ),
@@ -146,8 +148,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             child: TextField(
                               controller: minPriceController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Min Price',
+                              decoration: InputDecoration(
+                                labelText: locale.languageCode == 'en'
+                                    ? 'Min Price'
+                                    : 'न्यूनतम मूल्य',
                                 border: OutlineInputBorder(),
                               ),
                               onChanged: (val) {
@@ -167,8 +171,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             child: TextField(
                               controller: maxPriceController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Max Price',
+                              decoration: InputDecoration(
+                                labelText: locale.languageCode == 'en'
+                                    ? 'Max Price'
+                                    : 'अधिकतम मूल्य',
                                 border: OutlineInputBorder(),
                               ),
                               onChanged: (val) {
@@ -189,7 +195,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           return Expanded(
                             child: RadioListTile<int>(
                               contentPadding: EdgeInsets.zero,
-                              title: Text('$rating stars & above'),
+                              title: Text(
+                                locale.languageCode == 'en'
+                                    ? '$rating stars & above'
+                                    : '$rating सितारे और ऊपर',
+                              ),
                               value: rating,
                               groupValue: minRating,
                               onChanged: (val) {
@@ -208,16 +218,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: isLoading ? null : _performSearch,
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Search'),
+                          child: Text(
+                            locale.languageCode == 'en' ? 'Search' : 'खोजें',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
